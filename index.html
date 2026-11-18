@@ -38,7 +38,11 @@ padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-are
 #stage.scroll{align-items:center;justify-content:flex-start}
 #stage.scroll #txt{white-space:nowrap;width:auto;padding:0 100vw 0 0;animation:mq var(--dur,12s) linear infinite;text-align:left}
 @keyframes mq{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
-@media (prefers-reduced-motion:reduce){#stage.scroll #txt{animation-duration:60s}}
+@keyframes mqr{from{transform:translate(-50%,-50%) rotate(90deg) translateX(var(--from))}to{transform:translate(-50%,-50%) rotate(90deg) translateX(var(--to))}}
+#spd{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));right:14px;display:none;align-items:center;gap:8px;background:rgba(0,0,0,.55);color:#fff;border-radius:999px;padding:6px 8px;z-index:11;font-weight:800}
+#stage.scroll #spd{display:flex}
+#spd button{width:44px;height:44px;border-radius:50%;border:0;font:inherit;font-size:1.5rem;background:#fff;color:#000;cursor:pointer}
+#spd span{min-width:1.6em;text-align:center}
 #hint{position:fixed;bottom:calc(14px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;font-size:.85rem;opacity:.55;transition:opacity .6s;pointer-events:none}
 </style>
 </head>
@@ -54,18 +58,25 @@ padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-are
     <button class="chip" id="mFit" aria-pressed="true">Fit to screen</button>
     <button class="chip" id="mScroll" aria-pressed="false">Scrolling</button>
   </div>
+  <div class="row" role="group" aria-label="Scroll speed"><span class="lbl">Speed</span>
+    <button class="chip" id="stM" aria-label="Slower">&minus; Slower</button>
+    <span id="stL" style="min-width:2.2em;text-align:center;font-weight:800"></span>
+    <button class="chip" id="stP" aria-label="Faster">Faster +</button>
+  </div>
   <div class="row" role="group" aria-label="Rotate"><span class="lbl">Rotate</span>
     <button class="chip" id="rot" aria-pressed="false">Sideways (for landscape hold)</button>
   </div>
   <button class="go" id="go">Show full screen</button>
 </main>
 
-<div id="stage" role="dialog" aria-label="Full screen text"><div id="txt"></div><div id="hint">Tap to close</div></div>
+<div id="stage" role="dialog" aria-label="Full screen text"><div id="txt"></div><div id="hint">Tap to close</div>
+<div id="spd"><button id="spM" aria-label="Slower">&minus;</button><span id="spL"></span><button id="spP" aria-label="Faster">+</button></div></div>
 
 <script>
 (function(){
 var themes=[["#000000","#ffffff"],["#ffffff","#000000"],["#ffe600","#111111"],["#0b3d91","#ffffff"],["#d62828","#ffffff"],["#0a7d3b","#ffffff"]];
-var st={t:0,scroll:false,rot:false};
+var st={t:0,scroll:false,rot:false,sp:2};
+var F=[0.35,0.6,1,1.7,3];
 var $=function(i){return document.getElementById(i)};
 var inp=$('in'),stage=$('stage'),txt=$('txt');
 try{var s=JSON.parse(localStorage.getItem('bigtext')||'null');if(s){st=Object.assign(st,s.st||{});if(s.text)inp.value=s.text}}catch(e){}
@@ -81,10 +92,15 @@ function sync(){
   [].forEach.call(sw.children,function(b,i){b.setAttribute('aria-pressed',i===st.t)});
   $('mFit').setAttribute('aria-pressed',!st.scroll);$('mScroll').setAttribute('aria-pressed',st.scroll);
   $('rot').setAttribute('aria-pressed',st.rot);
+  $('stL').textContent=(st.sp+1)+'/5';$('spL').textContent=(st.sp+1);
 }
 $('mFit').onclick=function(){st.scroll=false;sync();save()};
 $('mScroll').onclick=function(){st.scroll=true;sync();save()};
 $('rot').onclick=function(){st.rot=!st.rot;sync();save()};
+function setSp(d,e){if(e)e.stopPropagation();st.sp=Math.max(0,Math.min(4,st.sp+d));sync();applyDur();save()}
+function applyDur(){txt.style.setProperty('--dur',((txt._base||10)/F[st.sp])+'s')}
+$('stM').onclick=function(e){setSp(-1,e)};$('stP').onclick=function(e){setSp(1,e)};
+$('spM').onclick=function(e){setSp(-1,e)};$('spP').onclick=function(e){setSp(1,e)};
 inp.oninput=save;sync();
 
 function fit(){
@@ -131,11 +147,19 @@ function render(){
   txt.removeAttribute('style');
   if(st.rot){
     var W=vh,H=vw;
-    txt.style.cssText='position:absolute;left:50%;top:50%;width:'+W+'px;height:'+H+'px;display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%) rotate(90deg)';
-    if(st.scroll){txt.style.animation='none';txt.style.whiteSpace='nowrap';}
-    fitBox(W,H);
+    if(st.scroll){
+      txt.style.cssText='position:absolute;left:50%;top:50%;width:'+W+'px;height:'+H+'px;display:flex;align-items:center;justify-content:flex-start;white-space:nowrap;padding:0;transform:translate(-50%,-50%) rotate(90deg);font-size:'+Math.floor(H*0.6)+'px';
+      var tw=txt.scrollWidth;
+      txt.style.setProperty('--from',W+'px');txt.style.setProperty('--to',(-tw)+'px');
+      txt._base=Math.max(6,(tw/W)*5);
+      txt.style.animation='mqr var(--dur,12s) linear infinite';
+      applyDur();
+    }else{
+      txt.style.cssText='position:absolute;left:50%;top:50%;width:'+W+'px;height:'+H+'px;display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%) rotate(90deg)';
+      fitBox(W,H);
+    }
   }else{
-    if(st.scroll){txt.style.fontSize=Math.floor(vh*0.6)+'px';txt.style.setProperty('--dur',Math.max(6,(txt.scrollWidth/vw)*5)+'s');return}
+    if(st.scroll){txt.style.fontSize=Math.floor(vh*0.6)+'px';txt._base=Math.max(6,(txt.scrollWidth/vw)*5);applyDur();return}
     txt.style.width=vw+'px';fitBox(vw,vh);
   }
 }
