@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Big Text</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#111111">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Big Text">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;800;900&display=swap">
 <style>
 :root{--bg:#f3f1ec;--fg:#1a1a1a;--mut:#6b6b66;--card:#fff;--line:#d9d6cd;--acc:#1a1a1a;--accfg:#fff;
@@ -149,6 +155,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')hide()});
 window.addEventListener('resize',function(){if(stage.classList.contains('on'))render()});
 document.addEventListener('fullscreenchange',function(){if(!document.fullscreenElement&&stage.classList.contains('on')){/* keep overlay */}});
 })();
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}
 </script>
 </body>
 </html>
