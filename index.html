@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Big Text</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;800;900&display=swap">
+<style>
+:root{--bg:#f3f1ec;--fg:#1a1a1a;--mut:#6b6b66;--card:#fff;--line:#d9d6cd;--acc:#1a1a1a;--accfg:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17171a;--fg:#f2f2f2;--mut:#9a9a9f;--card:#222226;--line:#38383d;--acc:#f2f2f2;--accfg:#17171a}}
+:root[data-theme="dark"]{--bg:#17171a;--fg:#f2f2f2;--mut:#9a9a9f;--card:#222226;--line:#38383d;--acc:#f2f2f2;--accfg:#17171a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:'Archivo',system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+main{max-width:640px;margin:0 auto;padding:24px 20px 40px}
+h1{font-weight:900;font-size:2rem;margin:8px 0 4px;letter-spacing:-.02em}
+p.sub{color:var(--mut);margin:0 0 20px}
+textarea{width:100%;min-height:150px;resize:vertical;font:inherit;font-size:1.25rem;font-weight:500;padding:14px;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--fg)}
+textarea:focus-visible,button:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0;align-items:center}
+.lbl{color:var(--mut);font-size:.9rem;min-width:64px}
+.sw{width:44px;height:44px;border-radius:50%;border:3px solid var(--line);cursor:pointer;padding:0}
+.sw[aria-pressed="true"]{border-color:var(--fg);box-shadow:0 0 0 2px var(--bg) inset}
+.chip{font:inherit;font-weight:500;padding:10px 16px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer;min-height:44px}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.go{width:100%;font:inherit;font-weight:800;font-size:1.3rem;padding:18px;border:0;border-radius:14px;background:var(--acc);color:var(--accfg);cursor:pointer;margin-top:8px}
+#stage{position:fixed;inset:0;display:none;z-index:10;overflow:hidden;cursor:pointer;
+padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+#stage.on{display:flex;align-items:center;justify-content:center}
+#txt{font-weight:900;line-height:1.05;text-align:center;white-space:pre-wrap;word-break:break-word;padding:3vmin;width:100%;letter-spacing:-.02em}
+#stage.scroll{align-items:center;justify-content:flex-start}
+#stage.scroll #txt{white-space:nowrap;width:auto;padding:0 100vw 0 0;animation:mq var(--dur,12s) linear infinite;text-align:left}
+@keyframes mq{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
+@media (prefers-reduced-motion:reduce){#stage.scroll #txt{animation-duration:60s}}
+#hint{position:fixed;bottom:calc(14px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;font-size:.85rem;opacity:.55;transition:opacity .6s;pointer-events:none}
+</style>
+</head>
+<body>
+<main>
+  <h1>Big Text</h1>
+  <p class="sub">Type a message, then show it full screen. Tap anywhere to close.</p>
+  <label for="in" class="lbl" style="display:none">Message</label>
+  <textarea id="in" placeholder="Type your message…" maxlength="500">HELLO!</textarea>
+
+  <div class="row" role="group" aria-label="Colors"><span class="lbl">Colors</span><span id="sws" style="display:contents"></span></div>
+  <div class="row" role="group" aria-label="Mode"><span class="lbl">Style</span>
+    <button class="chip" id="mFit" aria-pressed="true">Fit to screen</button>
+    <button class="chip" id="mScroll" aria-pressed="false">Scrolling</button>
+  </div>
+  <div class="row" role="group" aria-label="Rotate"><span class="lbl">Rotate</span>
+    <button class="chip" id="rot" aria-pressed="false">Sideways (for landscape hold)</button>
+  </div>
+  <button class="go" id="go">Show full screen</button>
+</main>
+
+<div id="stage" role="dialog" aria-label="Full screen text"><div id="txt"></div><div id="hint">Tap to close</div></div>
+
+<script>
+(function(){
+var themes=[["#000000","#ffffff"],["#ffffff","#000000"],["#ffe600","#111111"],["#0b3d91","#ffffff"],["#d62828","#ffffff"],["#0a7d3b","#ffffff"]];
+var st={t:0,scroll:false,rot:false};
+var $=function(i){return document.getElementById(i)};
+var inp=$('in'),stage=$('stage'),txt=$('txt');
+try{var s=JSON.parse(localStorage.getItem('bigtext')||'null');if(s){st=Object.assign(st,s.st||{});if(s.text)inp.value=s.text}}catch(e){}
+function save(){try{localStorage.setItem('bigtext',JSON.stringify({st:st,text:inp.value}))}catch(e){}}
+
+var sw=$('sws');
+themes.forEach(function(c,i){
+  var b=document.createElement('button');b.className='sw';b.style.background=c[0];b.style.boxShadow='inset 0 0 0 10px '+c[0]+', inset 0 0 0 22px '+c[1];
+  b.setAttribute('aria-label','Colors '+(i+1));b.setAttribute('aria-pressed',i===st.t);
+  b.onclick=function(){st.t=i;sync();save()};sw.appendChild(b);
+});
+function sync(){
+  [].forEach.call(sw.children,function(b,i){b.setAttribute('aria-pressed',i===st.t)});
+  $('mFit').setAttribute('aria-pressed',!st.scroll);$('mScroll').setAttribute('aria-pressed',st.scroll);
+  $('rot').setAttribute('aria-pressed',st.rot);
+}
+$('mFit').onclick=function(){st.scroll=false;sync();save()};
+$('mScroll').onclick=function(){st.scroll=true;sync();save()};
+$('rot').onclick=function(){st.rot=!st.rot;sync();save()};
+inp.oninput=save;sync();
+
+function fit(){
+  var vw=stage.clientWidth,vh=stage.clientHeight;
+  if(st.rot){var t=vw;vw=vh;vh=t}
+  txt.style.transform='';
+  if(st.scroll){
+    txt.style.fontSize=Math.floor(vh*0.6)+'px';
+    var len=txt.scrollWidth/vw;txt.style.setProperty('--dur',Math.max(6,len*5)+'s');
+    return;
+  }
+  txt.style.width=vw+'px';
+  var lo=10,hi=Math.max(vw,vh)*1.2;
+  while(hi-lo>1){
+    var m=(lo+hi)/2;txt.style.fontSize=m+'px';
+    if(txt.scrollHeight<=vh&&txt.scrollWidth<=vw)lo=m;else hi=m;
+  }
+  txt.style.fontSize=lo+'px';
+}
+function layout(){
+  var c=themes[st.t];stage.style.background=c[0];stage.style.color=c[1];
+  stage.classList.toggle('scroll',st.scroll);
+  if(st.rot&&!st.scroll){
+    txt.style.position='absolute';txt.style.width=stage.clientHeight+'px';txt.style.height=stage.clientWidth+'px';
+    txt.style.display='flex';txt.style.alignItems='center';txt.style.justifyContent='center';
+    txt.style.transform='rotate(90deg)';
+  }
+}
+function show(){
+  var v=inp.value.trim();if(!v){inp.focus();return}
+  txt.textContent=v;stage.classList.add('on');
+  txt.removeAttribute('style');
+  var c=themes[st.t];stage.style.background=c[0];stage.style.color=c[1];stage.classList.toggle('scroll',st.scroll);
+  if(st.rot){stage.style.writingMode='';}
+  render();
+  $('hint').style.opacity='.55';setTimeout(function(){$('hint').style.opacity='0'},2200);
+  var el=document.documentElement;
+  try{if(el.requestFullscreen)el.requestFullscreen().catch(function(){})}catch(e){}
+  try{if(navigator.wakeLock)navigator.wakeLock.request('screen').catch(function(){})}catch(e){}
+  save();
+}
+function render(){
+  var vw=stage.clientWidth,vh=stage.clientHeight;
+  txt.removeAttribute('style');
+  if(st.rot){
+    var W=vh,H=vw;
+    txt.style.cssText='position:absolute;left:50%;top:50%;width:'+W+'px;height:'+H+'px;display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%) rotate(90deg)';
+    if(st.scroll){txt.style.animation='none';txt.style.whiteSpace='nowrap';}
+    fitBox(W,H);
+  }else{
+    if(st.scroll){txt.style.fontSize=Math.floor(vh*0.6)+'px';txt.style.setProperty('--dur',Math.max(6,(txt.scrollWidth/vw)*5)+'s');return}
+    txt.style.width=vw+'px';fitBox(vw,vh);
+  }
+}
+function fitBox(W,H){
+  var inner=txt;var lo=10,hi=Math.max(W,H)*1.2;
+  while(hi-lo>1){var m=(lo+hi)/2;inner.style.fontSize=m+'px';
+    if(inner.scrollHeight<=H&&inner.scrollWidth<=W)lo=m;else hi=m}
+  inner.style.fontSize=lo+'px';
+}
+function hide(){
+  stage.classList.remove('on');
+  try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}
+}
+$('go').onclick=show;
+stage.onclick=hide;
+document.addEventListener('keydown',function(e){if(e.key==='Escape')hide()});
+window.addEventListener('resize',function(){if(stage.classList.contains('on'))render()});
+document.addEventListener('fullscreenchange',function(){if(!document.fullscreenElement&&stage.classList.contains('on')){/* keep overlay */}});
+})();
+</script>
+</body>
+</html>
