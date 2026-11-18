@@ -9,6 +9,7 @@
 <meta name="theme-color" content="#111111">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Big Text">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;800;900&display=swap">
 <style>
@@ -31,6 +32,7 @@ textarea:focus-visible,button:focus-visible{outline:3px solid var(--fg);outline-
 .chip{font:inherit;font-weight:500;padding:10px 16px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer;min-height:44px}
 .chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .go{width:100%;font:inherit;font-weight:800;font-size:1.3rem;padding:18px;border:0;border-radius:14px;background:var(--acc);color:var(--accfg);cursor:pointer;margin-top:8px}
+body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:#111;z-index:5}
 #stage{position:fixed;inset:0;display:none;z-index:10;overflow:hidden;cursor:pointer;
 padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
 #stage.on{display:flex;align-items:center;justify-content:center}
@@ -39,10 +41,6 @@ padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-are
 #stage.scroll #txt{white-space:nowrap;width:auto;padding:0 100vw 0 0;animation:mq var(--dur,12s) linear infinite;text-align:left}
 @keyframes mq{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
 @keyframes mqr{from{transform:translate(-50%,-50%) rotate(90deg) translateX(var(--from))}to{transform:translate(-50%,-50%) rotate(90deg) translateX(var(--to))}}
-#spd{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));right:14px;display:none;align-items:center;gap:8px;background:rgba(0,0,0,.55);color:#fff;border-radius:999px;padding:6px 8px;z-index:11;font-weight:800}
-#stage.scroll #spd{display:flex}
-#spd button{width:44px;height:44px;border-radius:50%;border:0;font:inherit;font-size:1.5rem;background:#fff;color:#000;cursor:pointer}
-#spd span{min-width:1.6em;text-align:center}
 #hint{position:fixed;bottom:calc(14px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;font-size:.85rem;opacity:.55;transition:opacity .6s;pointer-events:none}
 </style>
 </head>
@@ -69,8 +67,7 @@ padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-are
   <button class="go" id="go">Show full screen</button>
 </main>
 
-<div id="stage" role="dialog" aria-label="Full screen text"><div id="txt"></div><div id="hint">Tap to close</div>
-<div id="spd"><button id="spM" aria-label="Slower">&minus;</button><span id="spL"></span><button id="spP" aria-label="Faster">+</button></div></div>
+<div id="stage" role="dialog" aria-label="Full screen text"><div id="txt"></div><div id="hint">Tap to close</div></div>
 
 <script>
 (function(){
@@ -92,7 +89,7 @@ function sync(){
   [].forEach.call(sw.children,function(b,i){b.setAttribute('aria-pressed',i===st.t)});
   $('mFit').setAttribute('aria-pressed',!st.scroll);$('mScroll').setAttribute('aria-pressed',st.scroll);
   $('rot').setAttribute('aria-pressed',st.rot);
-  $('stL').textContent=(st.sp+1)+'/5';$('spL').textContent=(st.sp+1);
+  $('stL').textContent=(st.sp+1)+'/5';
 }
 $('mFit').onclick=function(){st.scroll=false;sync();save()};
 $('mScroll').onclick=function(){st.scroll=true;sync();save()};
@@ -100,7 +97,6 @@ $('rot').onclick=function(){st.rot=!st.rot;sync();save()};
 function setSp(d,e){if(e)e.stopPropagation();st.sp=Math.max(0,Math.min(4,st.sp+d));sync();applyDur();save()}
 function applyDur(){txt.style.setProperty('--dur',((txt._base||10)/F[st.sp])+'s')}
 $('stM').onclick=function(e){setSp(-1,e)};$('stP').onclick=function(e){setSp(1,e)};
-$('spM').onclick=function(e){setSp(-1,e)};$('spP').onclick=function(e){setSp(1,e)};
 inp.oninput=save;sync();
 
 function fit(){
